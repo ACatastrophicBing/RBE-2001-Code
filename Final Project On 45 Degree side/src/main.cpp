@@ -103,29 +103,47 @@ bool lineFollowDistanceSense1(float dist){
   }
   return false;
 }
-
+bool goin = false;
+void stopBlu(){
+  delay(2);
+  if(decoder.getKeyCode() == remoteEnterSave){
+    blu.setEffort(0);
+    Serial.println("Stopping blu motor");
+  }
+}
 void checkRemote(){
+  delay(2);
   if(decoder.getKeyCode() == remotePlayPause){
-    paused = !paused;
-    Serial.println("Paused Button Sensed");
+    goin = true;
+    Serial.println("Paused Button Sensed, so that means it can start");
+  }
+}
+void checkMainStop(){
+  delay(2);
+  if(decoder.getKeyCode() == remote2){
+    goin = false;
+    Serial.println("PLEASE STOP AND COMMIT UWU");
   }
 }
 bool checkForPlay(){
+  delay(2);
   if(decoder.getKeyCode() == remoteUp){
     return true;
   }return false;
 }
 
 void moveDown(){
+  delay(2);
   if(decoder.getKeyCode() == remoteVolMinus){
-    blu.setEffort(-200);
+    blu.setEffort(-400);
     Serial.println("Moving Up");
   }
 }
 
 void moveUp(){
+  delay(2);
   if(decoder.getKeyCode() == remoteVolPlus){
-    blu.setEffort(200);
+    blu.setEffort(400);
     Serial.println("Moving Down");
   }
 }
@@ -136,10 +154,11 @@ void setup() {
     qtr.setEmitterPin(19);
     decoder.init();
 
+    servo.SetMinMaxUS(900, 2100);
+    pinMode(18, INPUT);
     servo.Init();
     servo.Attach();
-    servo.SetMinMaxUS(900, 2100);
-    pinMode(A0, INPUT);
+
 
     rangerDan.setup();
     blu.setup();
@@ -162,7 +181,7 @@ int lineFollowState = 0;
 bool timer = true;
 enum statemachine {LIFT_ARM_45,TURN_180,DRIVE_WAIT_FOR_BLACK,
   LINE_FOLLOW_WAIT_FOR_BLACK,TURN_90,LINE_FOLLOW_DISTANCE_SENSE,ARM_PICKUP,LIFT_ARM_25,OPEN_CLAW,CLOSE_CLAW,WAIT_FOR_PLAY};
-int stateInNow = WAIT_FOR_PLAY;//WAIT_FOR_PLAY
+int stateInNow = WAIT_FOR_PLAY;//WAIT_FOR_PLAY so that means that it will first
 //assuming arm always starts at the exact angle necessary to pickup from pickup zone
 //This is the code to do the 45 degree side
 
@@ -178,28 +197,44 @@ bool turnToLine(){
       }
       return true;
 }
+bool openClaw(){
+  servo.Write(900);//need a good close POS
+  delay(500);
+  return true;
+}
+bool closeClaw(){
+  servo.Write(1433);
+  delay(500);
+  return true;
+}
 
-
-void loop()
-{
-  servo.Write(1200);
-  delay(1000);
-  Serial.println("PLEASE");
-  servo.Write(1800);
-  delay(1000);
-  Serial.println("KILL ME");
-
+void loop(){
+/*for(int i = 1100; i<1900;i+=100){
+  servo.Attach();
+  servo.Write(i);
+  delay(100);
+  servo.Detach();
+}*/
+/*openClaw();
+delay(500);
+closeClaw();
+delay(500);
+*/
   //rangerDan.getDistanceCM();
-  //checkRemote();
-  //moveDown();
-  //moveUp();
+  checkRemote();
+  //Serial.println("Here");
+  moveDown();
+  moveUp();
+  stopBlu();
+  //openClaw();
+  //closeClaw();
   //printLineFollowNums();
   //lineFollowDistanceSense1(rangerDan.getDistanceCM());
   //turnToLine();
   //if(paused){
     //Serial.println("Paused Clicked");
   //}
-  if(false){//so I can test tidbits of code and use IR receiver, paused is true when going
+  if(goin){//so I can test tidbits of code and use IR receiver, paused is true when going
   switch(stateInNow){
     case LIFT_ARM_45://lift arm
       blu.armPID(4860);//distance that the arm has to move
@@ -252,7 +287,6 @@ void loop()
       }
       break;
     case LINE_FOLLOW_DISTANCE_SENSE://line follow and distance sense
-      rangerDan.looper();
       if(!lineFollowDistanceSense1(rangerDan.getDistanceCM())){
         Serial.println("Distance Sense Line Following");
       }else{
@@ -285,11 +319,14 @@ void loop()
       }
       break;
     case CLOSE_CLAW://close claw, needs to keep claw closed so always in a state of closing since not in a good point
-      stateInNow = LIFT_ARM_45;
+      closeClaw();
       Serial.println("Claw Closed");
+      stateInNow = LIFT_ARM_45;
       break;
     case OPEN_CLAW://open claws
+      openClaw();
       Serial.print("Claw Opened");
+
       break;
     case WAIT_FOR_PLAY:
       if(checkForPlay()){//will only change state once the up button is pressed

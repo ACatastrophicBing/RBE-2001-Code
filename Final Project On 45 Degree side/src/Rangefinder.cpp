@@ -37,14 +37,9 @@ void Rangefinder::setup(void)
 {
     pinMode(triggerPin, OUTPUT);
     pinMode(echoPin, INPUT);
-    Serial.begin(9600);
     attachInterrupt(digitalPinToInterrupt(echoPin), Rangefinder::ultrasonicISR, CHANGE);
 }
 
-void Rangefinder::looper(void){
-    //Serial.println(getDistanceCM());
-    delay(100);
-}
 
 float Rangefinder::getDistanceCM(void){
     digitalWrite(triggerPin, LOW);

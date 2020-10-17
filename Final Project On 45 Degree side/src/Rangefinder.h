@@ -7,7 +7,6 @@ class Rangefinder
     public:
         //Rangefinder(int triggerPin, int echoPin);   
         void setup();   
-        void looper();   
         float getDistanceCM();
         //int getEchoPin();
     
